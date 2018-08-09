@@ -1,0 +1,122 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+class Master extends MX_Controller {
+    private $modul = "Transaksi_gudang/";
+    private $fungsi = "";
+    function __construct() {
+        parent::__construct();
+        $this->load->model('Transaksigudangmodel');
+        $this->modul .= $this->router->fetch_class();
+        $this->fungsi = $this->router->fetch_method();
+        $this->_insertLog();
+    }
+    function _insertLog($fungsi = null){
+        $id_user = $this->session->userdata('id_user');
+        $dataInsert['id_user'] = $id_user;
+        $dataInsert['modul'] = $this->modul;
+        $dataInsert['fungsi'] = $this->fungsi;
+        $insertLog = $this->Transaksigudangmodel->insert($dataInsert, 't_log');
+    }
+    function index(){
+        $dataCondition['deleted'] = 1;
+        $data['list_bahan'] = $this->Transaksigudangmodel->select($dataCondition, 'm_bahan', 'nama')->result();
+        $data['list_kategori'] = $this->Transaksigudangmodel->select($dataCondition, 'm_bahan_kategori', 'nama')->result();
+        $this->load->view('Transaksi_gudang/view', $data);
+    }
+    function cetak(){
+        $tipe = (empty($_GET['tipe'])) ? '' : $_GET['tipe'];
+        $start = (empty($_GET['start'])) ? '' : $_GET['start'];
+        $end = (empty($_GET['end'])) ? '' : $_GET['end'];
+        $data['list'] = $this->Transaksigudangmodel->print_data($tipe, $start, $end);
+        // print('<pre>'.print_r($data['list'], true).'</pre>');
+        $this->load->view('Transaksi_gudang/cetak', $data);
+    }
+    function data() {
+        $requestData= $_REQUEST;
+        /*$sql = "SELECT gm.id,
+                gm.no_transaksi, gm.no_batch, gm.expired_date, gm.harga_pembelian AS harga,
+                bahan.nama AS nama_bahan, bahan.kode_bahan, satuan.nama AS nama_satuan,
+                gudang.stok_awal, gudang.jumlah_masuk, gudang.jumlah_keluar, gudang.stok_akhir,
+                gudang.type, gudang.date_add
+                FROM tt_gudang_masuk gm
+                LEFT JOIN tt_gudang gudang ON gm.id = gudang.id_gudang
+                LEFT JOIN m_bahan bahan ON bahan.id = gudang.id_bahan
+                LEFT JOIN m_satuan satuan ON bahan.id_satuan = satuan.id";
+                
+        if( !empty($requestData['search']['value']) ) {
+            $sql.=" WHERE ( bahan.nama LIKE '%".$requestData['search']['value']."%' ";
+            $sql.=" OR bahan.kode_bahan LIKE '%".$requestData['search']['value']."%' ";
+            $sql.=" OR no_transaksi LIKE '%".$requestData['search']['value']."%' )";
+        }
+
+        if(!empty($requestData['columns'][1]['search']['value']) && $requestData['columns'][1]['search']['value'] != '') {
+            $filter = $requestData['columns'][1]['search']['value'];
+            $sql.= " AND bahan.nama = '".$filter."'";
+        }*/
+
+        $sql= "SELECT gudang.id, gudang.stok_awal, gudang.jumlah_masuk, gudang.jumlah_keluar, gudang.stok_akhir, gudang.type, gudang.date_add,
+                (CASE WHEN gudang.type = 1 THEN gm.no_transaksi ELSE gk.no_transaksi END) AS no_transaksi,
+                (CASE WHEN gudang.type = 1 THEN gm.no_batch ELSE gk.no_batch END) AS no_batch,
+                (CASE WHEN gudang.type = 1 THEN gm.expired_date ELSE gk.expired_date END) AS expired_date,
+                (CASE WHEN gudang.type = 1 THEN gm.harga_pembelian ELSE gk.harga_penjualan END) AS harga,
+                bahan. id AS id_bahan, bahan.nama AS nama_bahan, bahan.kode_bahan, satuan.nama AS nama_satuan
+                FROM tt_gudang gudang
+                LEFT JOIN tt_gudang_masuk gm ON (gm.id = gudang.id_gudang AND gudang.type = 1)
+                LEFT JOIN tt_gudang_keluar gk ON (gk.id = gudang.id_gudang AND gudang.type = 2)
+                LEFT JOIN m_bahan bahan ON bahan.id = gudang.id_bahan
+                LEFT JOIN m_satuan satuan ON bahan.id_satuan = satuan.id
+                JOIN (
+                    SELECT id_bahan, max(date_add) date_add FROM tt_gudang GROUP BY id_bahan
+                ) gudang_2 ON gudang.id_bahan = gudang_2.id_bahan AND gudang.date_add = gudang_2.date_add";
+        $where = ' WHERE';
+        if(!empty($requestData['id_bahan'])) { 
+            $sql .= $where." bahan.id = ".$requestData['id_bahan'];
+            $where = ' AND';
+        }
+        if(!empty($requestData['id_kategori'])) { 
+            $sql .= $where." bahan.id_kategori_bahan = ".$requestData['id_kategori'];
+            $where = ' AND';
+        }        
+        if( !empty($requestData['search']['value']) ) {
+            $sql.= $where." ( bahan.nama LIKE '%".$requestData['search']['value']."%' ";
+            $sql.=" OR bahan.kode_bahan LIKE '%".$requestData['search']['value']."%' ";
+            $sql.=" OR gm.no_transaksi LIKE '%".$requestData['search']['value']."%' ";
+            $sql.=" OR gk.no_transaksi LIKE '%".$requestData['search']['value']."%' )";
+        }
+
+        $query=$this->Transaksigudangmodel->rawQuery($sql);
+        $totalFiltered = $query->num_rows();
+
+        // $sql.= " GROUP BY no_transaksi ORDER BY date_add DESC";
+        
+        $query=$this->Transaksigudangmodel->rawQuery($sql);
+        $data = array(); $i=0;
+        foreach ($query->result_array() as $num => $row) {
+            $nestedData     =   array();
+            // $nestedData[]   =   "<td data-search='AsdSDasd'><span class='text-center' style='display:block;'>".($i+1)."</span></td>";
+            $nestedData[]   =   $row['no_transaksi'];
+            $nestedData[]   =   $row['nama_bahan'];
+            $nestedData[]   =   $row['kode_bahan'];
+            $nestedData[]   =   $row['nama_satuan']; 
+            $nestedData[]   =   $row['stok_awal'];
+            $nestedData[]   =   $row['jumlah_masuk'];
+            $nestedData[]   =   $row['jumlah_keluar'];
+            $nestedData[]   =   $row['stok_akhir'];
+            $nestedData[]   =   $row['no_batch'];
+            $nestedData[]   =   date('d/m/Y' , strtotime($row['expired_date']));
+            $nestedData[]   =   ($row['type'] == 1 ? 'Gudang Masuk' : 'Gudang Keluar');
+            // $nestedData[]   =   toRupiah($row['harga']);
+
+            $data[] = $nestedData; $i++;
+        }
+        
+        $totalData = count($data);
+        $json_data = array(
+                    "draw"            => intval( $requestData['draw'] ),
+                    "recordsTotal"    => intval( $totalData ),
+                    "recordsFiltered" => intval( $totalFiltered ),
+                    "data"            => $data
+                    );
+        echo json_encode($json_data);
+      }
+}
