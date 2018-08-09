@@ -38,7 +38,9 @@ class Master extends MX_Controller {
       $data['data_list'] = $query->result();
     $this->load->view('Laporan_stok_gudang/cetak', $data);
     }
-    function data(){
+
+    function data()
+    {
       $requestData= $_REQUEST;
       $sql = "SELECT bahan.id
               FROM m_bahan bahan
@@ -58,6 +60,7 @@ class Master extends MX_Controller {
             6 => "MAX(stok_akhir)",
             7 => "bahan.expired_date"
          );
+
       $sql = "SELECT
               bahan.id, bahan.nama AS nama_bahan , bahan.expired_date,
               SUBSTRING_INDEX( GROUP_CONCAT(CAST(gudang.stok_awal AS CHAR) ORDER BY gudang.date_add DESC), ',', 1 ) AS stok_awal,
@@ -70,6 +73,8 @@ class Master extends MX_Controller {
               LEFT JOIN tt_gudang gudang ON bahan.id = gudang.id_bahan
               LEFT JOIN m_satuan satuan ON bahan.id_satuan = satuan.id
               WHERE bahan.deleted = 1";
+
+
       if( !empty($requestData['search']['value']) ) {
           $sql.=" AND ( bahan.nama LIKE '%".$requestData['search']['value']."%' ";
           $sql.=" OR kategori.nama LIKE '%".$requestData['search']['value']."%' )";
@@ -86,6 +91,7 @@ class Master extends MX_Controller {
 
       $data = array(); $i=0;
       foreach ($query->result_array() as $row) {
+          
           $sql = "SELECT SUM(jumlah_keluar) AS keluar_pp FROM h_bahan WHERE id_bahan = ".$row['id'];
           $keluar_pp = $this->Laporanstokgudangmodel->rawQuery($sql)->row()->keluar_pp;
           $jumlahKeluar = ($keluar_pp > 0 ? floatval($keluar_pp) : 0) + ($row['jumlah_keluar']);
@@ -99,8 +105,8 @@ class Master extends MX_Controller {
           $nestedData[]   =   "<span class='text-center' style='display:block;'>".($row["stok_akhir"] ? $row["stok_akhir"] : '-')."</span>";
           $expiredDate = $row['expired_date'] == '0000-00-00' ? '-' : date('d/m/Y', strtotime($row["expired_date"]));
           $nestedData[]   =   "<span class='text-center' style='display:block;'>".$expiredDate."</span>";
-
           $data[] = $nestedData; $i++;
+
       }
       $totalData = count($data);
       $json_data = array(
@@ -110,5 +116,7 @@ class Master extends MX_Controller {
                   "data"            => $data
                   );
       echo json_encode($json_data);
+
+
     }
   }

@@ -583,7 +583,8 @@ function approve() {
     foreach($ppBahanBaku->result() as $row) {
       $tbahan = $this->Perintahproduksimodel->select(array('id' => $row->id_bahan), 'tt_bahan')->row();
       $bahan = $this->Perintahproduksimodel->select(array('id' => $row->id_bahan), 'm_bahan')->row();
-      $penguranganBahanBaku = ($tbahan->saldo_bulan_sekarang) - ($row->per_batch);
+      //..revisi aldo  
+      // $penguranganBahanBaku = ($tbahan->saldo_bulan_sekarang) - ($row->per_batch);
       $dataBahanBaku[] = array(
         'id_bahan' => $row->id_bahan,
         'saldo_bulan_sekarang' => $penguranganBahanBaku
@@ -610,8 +611,8 @@ function approve() {
     foreach($ppBahanKemas->result() as $row) {
       $tbahan = $this->Perintahproduksimodel->select(array('id' => $row->id_bahan), 'tt_bahan')->row();
       $bahan = $this->Perintahproduksimodel->select(array('id' => $row->id_bahan), 'm_bahan')->row();
-
-      $penguranganBahanKemas = ($tbahan->saldo_bulan_sekarang) - ($row->jumlah);
+      //..revisi aldo
+      // $penguranganBahanKemas = ($tbahan->saldo_bulan_sekarang) - ($row->jumlah);
       $dataBahanKemas[] = array(
         'id_bahan' => $row->id_bahan,
         'saldo_bulan_sekarang' => $penguranganBahanKemas
@@ -633,7 +634,9 @@ function approve() {
     }
   }
 
-  $statusStok = count($dataBahanKurang) > 0 ? array('list_bahan' => $dataBahanKurang) : "lanjut";
+  //..revisi aldo
+  // $statusStok = count($dataBahanKurang) > 0 ? array('list_bahan' => $dataBahanKurang) : "lanjut";
+  $statusStok = "lanjut";
 
   if($statusStok == 'lanjut') {
     if(count($dataBahanBaku) > 0) $this->Perintahproduksimodel->update_batch($dataBahanBaku, 'tt_bahan', 'id_bahan');
@@ -650,6 +653,8 @@ function approve() {
     );
   echo json_encode($result);
 }
+
+
 function setValid(){
   $params = $this->input->post();
   if(!$params) redirect();
