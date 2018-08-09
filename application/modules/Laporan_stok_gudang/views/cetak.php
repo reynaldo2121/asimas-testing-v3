@@ -26,6 +26,7 @@
         <th>Keluar</th>
         <th>Stok Akhir</th>
         <th>Expired</th>
+        <th>Type</th>
       </tr>
     </thead>
     <tbody>
@@ -45,6 +46,7 @@
           <td class="text-center"><?php echo ($row->jumlah_keluar ? $row->jumlah_keluar : '-')?></td>
           <td class="text-center"><?php echo ($row->stok_akhir ? $row->stok_akhir : '-')?></td>
           <td class="text-center"><?php echo $row->expired_date == '0000-00-00' ? '-' : date('d/m/Y', strtotime($row->expired_date))?></td>
+          <td class="text-center"><?php echo ($row->type)?></td>
         </tr>
       <?php }
       } ?>

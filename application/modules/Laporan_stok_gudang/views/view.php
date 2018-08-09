@@ -20,6 +20,7 @@
                   <th class="text-center">Keluar</th>
                   <th class="text-center">Stok Akhir</th>
                   <th class="text-center">Expired Date</th>
+                  <th class="text-center">Type</th>
               </tr>
           </thead>
 
